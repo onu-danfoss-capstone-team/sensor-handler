@@ -27,12 +27,20 @@ void readSensorData(int dataOut[]) {
 }
 
 void writeFourDigitNumber(int offset, int n) {
+    bool wasNegative = n < 0;
+
+    n = abs(n);
+
     int digit = n % 10;  // Get the least significant digit
     int truncatedOffset = offset % 8;   // Truncate offset to fit within 8 digits
     for (int i = 0; i < 4; i++) {
         lc.setDigit(floor(offset / 8), truncatedOffset + i, digit, false);  // Write digit to LED display
         n = n / 10;         // Move to the next digit
         digit = n % 10;     // Get the next digit
+    }
+
+    if (wasNegative) {
+      lc.setChar(floor(offset / 8), truncatedOffset + 5, '-', false);
     }
 }
 
@@ -47,7 +55,7 @@ void sendData(int dataOut[]) {
 }
 
 void updateDisplay(int dataOut[]) {
-    writeFourDigitNumber(0, dataOut[0]);   // Display oven temperature
-    writeFourDigitNumber(4, dataOut[1]);   // Display oil temperature
-    writeFourDigitNumber(8, dataOut[2]);   // Display oil pressure
+    writeFourDigitNumber(16, dataOut[0]);   // Display oven temperature
+    writeFourDigitNumber(8, dataOut[1]);   // Display oil temperature
+    writeFourDigitNumber(0, dataOut[2]);   // Display oil pressure
 }
