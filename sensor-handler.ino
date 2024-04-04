@@ -1,28 +1,45 @@
 #include "SensorModule.h"
 
-#define buttonPin 5
+#define BUTTON_PIN 5
 
-bool testEnabled = false;
 const int interval = 5000;
-
-const int lastDebounce = -1;
 long int lastUpdate = -1;
 
-int lastButtonState = 0;
-int newButtonState = 0;
 long int readingsSinceLast = 0;
 long int sensorData[3];
+
+bool calibrationMode = false;        // Calibration mode flag
+bool lastButtonState = LOW;          // Previous state of the button
+unsigned long lastDebounceTime = 0;  // Last time the button was pressed
+unsigned long debounceDelay = 200;   // Debounce delay time in milliseconds
 
 void setup() {
   Serial.begin(9600);        // Initialize serial communication
   initializeSensorModule();  // Initialize sensor module
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 }
 
 void loop() {
   long int currentTime = millis();  // Get current time
 
-  readSensorData(sensorData, testEnabled);  // Read sensor data
+  readSensorData(sensorData, calibrationMode);  // Read sensor data
   readingsSinceLast += 1;
+
+  bool currentButtonState = digitalRead(BUTTON_PIN);
+
+  // Check if the calibration button is pressed and the debounce delay has
+  // elapsed
+  if (currentButtonState == LOW && currentButtonState != lastButtonState &&
+      (millis() - lastDebounceTime) > debounceDelay) {
+    calibrationMode = !calibrationMode;  // Toggle calibration mode
+    lastDebounceTime = millis();         // Update the last debounce time
+  }
+
+  lastButtonState = currentButtonState;  // Update the last button state
+
+  if (calibrationMode) {
+    calibrateSensors();
+  }
 
   if (currentTime - lastUpdate >= interval) {
     lastUpdate = currentTime;  // Update last serial update time
@@ -36,15 +53,7 @@ void loop() {
     sensorData[0] = 0;
     sensorData[1] = 0;
     sensorData[2] = 0;
-    Serial.println(testEnabled);
+    Serial.println(calibrationMode);
     readingsSinceLast = 0;
   }
-
-  newButtonState = digitalRead(buttonPin);
-
-  if (lastButtonState != newButtonState && newButtonState == 0) {
-    testEnabled = !testEnabled;
-  }
-
-  lastButtonState = newButtonState;
 }
