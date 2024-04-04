@@ -6,6 +6,10 @@ LedControl lc = LedControl(11, 13, 12, 8);  // Initialize LED control pins
 #define oilTempPin A1        // Define pin for oil temperature sensor
 #define oilPressurePin A2    // Define pin for oil pressure sensor
 
+#define ovenTempOffset 0
+#define oilTempOffset 0
+#define oilPressureOffset 0
+
 void initializeSensorModule() {
     pinMode(ovenTempPin, INPUT);        // Set oven temperature pin as input
     pinMode(oilTempPin, INPUT);         // Set oil temperature pin as input
@@ -21,9 +25,9 @@ void initializeSensorModule() {
 
 void readSensorData(int dataOut[]) {
     // Read sensor data and map to meaningful values
-    dataOut[0] = map(analogRead(ovenTempPin), 0, 1023, -100, 450);        // Read oven temperature
-    dataOut[1] = map(analogRead(oilTempPin), 0, 1023, -100, 450);         // Read oil temperature
-    dataOut[2] = map(analogRead(oilPressurePin), 204, 1023, 0, 500);     // Read oil pressure
+    dataOut[0] = map(analogRead(ovenTempPin), 0, 1023, -100, 450) + ovenTempOffset;        // Read oven temperature
+    dataOut[1] = map(analogRead(oilTempPin), 0, 1023, -100, 450) + oilTempOffset;         // Read oil temperature
+    dataOut[2] = abs(map(analogRead(oilPressurePin), 204, 1023, 0, 500)) + oilPressureOffset;     // Read oil pressure
 }
 
 void writeFourDigitNumber(int offset, int n) {
@@ -39,8 +43,11 @@ void writeFourDigitNumber(int offset, int n) {
         digit = n % 10;     // Get the next digit
     }
 
-    if (wasNegative) {
+    // offset check is since oil pressure cannot be negative
+    if (wasNegative && offset != 0) {
       lc.setChar(floor(offset / 8), truncatedOffset + 5, '-', false);
+    } else {
+      lc.setChar(floor(offset / 8), truncatedOffset + 5, ' ', false);
     }
 }
 
