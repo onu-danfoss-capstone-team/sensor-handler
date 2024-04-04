@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Danfoss Capstone Lab Records Digitization System
 
 ## Contents
