@@ -1,30 +1,6 @@
-# GitHub Pages configuration
+# _config.yml
+
+title: Sensor Handler Docs
+description: Documentation for the Sensor Handler project
 theme: jekyll-theme-midnight
-
-# Site settings
-title: My GitHub Pages Site
-description: A description of my site
-
-# Navigation links
-nav:
-  - title: Home
-    url: /
-
-# Plugins
-plugins:
-  - jekyll-feed
-
-# Exclude files and directories
-exclude:
-  - Gemfile
-  - Gemfile.lock
-  - node_modules
-  - vendor
-  - _site
-  - .git
-
-# Markdown settings
 markdown: kramdown
-kramdown:
-  input: GFM
-  syntax_highlighter: rouge
