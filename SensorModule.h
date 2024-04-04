@@ -4,8 +4,8 @@
 #include <Arduino.h>
 
 void initializeSensorModule();
-void readSensorData(int dataOut[]);
-void sendData(int dataOut[]);
-void updateDisplay(int dataOut[]);
+void readSensorData(long int dataOut[], bool testEnabled);
+void sendData(long int dataOut[], long int readingsSinceLast);
+void updateDisplay(long int dataOut[], long int readingsSinceLast);
 
 #endif
