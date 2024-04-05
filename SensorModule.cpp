@@ -8,11 +8,11 @@ LedControl lc = LedControl(11, 13, 12, 8);  // Initialize LED control pins
 #define OIL_TEMP_PIN A1      // Define pin for oil temperature sensor
 #define OIL_PRESSURE_PIN A2  // Define pin for oil pressure sensor
 
-float ovenTempSlope = 1.0;
+float ovenTempSlope = (1023 - 0) / (450 + 100);
 float ovenTempOffset = 0.0;
-float oilTempSlope = 1.0;
+float oilTempSlope = (1023 - 0) / (450 + 100);
 float oilTempOffset = 0.0;
-float oilPressureSlope = 1.0;
+float oilPressureSlope = (1023 - 204) / (450 + 100);
 float oilPressureOffset = 0.0;
 
 void initializeSensorModule() {
@@ -35,6 +35,11 @@ void calibrateSensor(float &slope, float &offset, int raw1, int raw2,
 }
 
 void calibrateSensors() {
+
+  if (!Serial.available()) {
+    return;
+  }
+
   // Raw and expected values for oven temperature
   int ovenTempRaw1 = Serial.parseInt();
   int ovenTempRaw2 = Serial.parseInt();
@@ -63,9 +68,9 @@ void calibrateSensors() {
 }
 
 void readSensorData(long int dataOut[], bool testEnabled) {
-  int rawOvenTemp = analogRead(ovenTempPin);
-  int rawOilTemp = analogRead(oilTempPin);
-  int rawOilPressure = analogRead(oilPressurePin);
+  int rawOvenTemp = analogRead(OVEN_TEMP_PIN);
+  int rawOilTemp = analogRead(OIL_TEMP_PIN);
+  int rawOilPressure = analogRead(OIL_PRESSURE_PIN);
 
   // Read sensor data and map to meaningful values
   if (testEnabled) {
@@ -107,16 +112,10 @@ void writeFourDigitNumber(long int offset, int n) {
 }
 
 void sendData(long int dataOut[], long int readingsSinceLast) {
-  // Print sensor data over serial
-  // Serial.print("Oven Temp: ");
-  Serial.print(readingsSinceLast);
-  Serial.print(", ");
   Serial.print(dataOut[0] / readingsSinceLast);
   Serial.print(", ");
-  // Serial.print("Oil Temp: ");
   Serial.print(dataOut[1] / readingsSinceLast);
   Serial.print(", ");
-  // Serial.print("Oil Pressure: ");
   Serial.println(dataOut[2] / readingsSinceLast);
 }
 
