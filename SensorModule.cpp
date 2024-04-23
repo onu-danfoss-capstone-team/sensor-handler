@@ -15,6 +15,8 @@ float oilTempOffset = 0.0;
 float oilPressureSlope = (1023 - 204) / (450 + 100);
 float oilPressureOffset = 0.0;
 
+int vars[12] = {0};
+
 void initializeSensorModule() {
   pinMode(OVEN_TEMP_PIN, INPUT);     // Set oven temperature pin as input
   pinMode(OIL_TEMP_PIN, INPUT);      // Set oil temperature pin as input
@@ -29,42 +31,35 @@ void initializeSensorModule() {
 }
 
 void calibrateSensor(float &slope, float &offset, int raw1, int raw2,
-                     float expected1, float expected2) {
-  slope = (expected2 - expected1) / (raw2 - raw1);
+                     int expected1, int expected2) {
+  slope = (expected2 - expected1) / (float) (raw2 - raw1);
   offset = expected1 - slope * raw1;
 }
 
 void calibrateSensors() {
-
-  if (!Serial.available()) {
-    return;
+  for (int i = 0; i<12; i++) {
+    if (Serial.available() > 0) {
+      int val = Serial.parseInt();
+      if (val == 0) {
+        continue;
+      }
+      vars[i] = val;
+    }
   }
 
-  // Raw and expected values for oven temperature
-  int ovenTempRaw1 = Serial.parseInt();
-  int ovenTempRaw2 = Serial.parseInt();
-  float ovenTempExpected1 = Serial.parseInt();
-  float ovenTempExpected2 = Serial.parseInt();
-
-  // Raw and expected values for oil temperature
-  int oilTempRaw1 = Serial.parseInt();
-  int oilTempRaw2 = Serial.parseInt();
-  float oilTempExpected1 = Serial.parseInt();
-  float oilTempExpected2 = Serial.parseInt();
-
-  // Raw and expected values for oil pressure
-  int oilPressureRaw1 = Serial.parseInt();
-  int oilPressureRaw2 = Serial.parseInt();
-  float oilPressureExpected1 = Serial.parseInt();
-  float oilPressureExpected2 = Serial.parseInt();
+  for (int i = 0; i<12; i++) {
+    Serial.print(vars[i]);
+    Serial.print(',');
+  }
+  Serial.println('\n');
 
   // Perform calibration
-  calibrateSensor(ovenTempSlope, ovenTempOffset, ovenTempRaw1, ovenTempRaw2,
-                  ovenTempExpected1, ovenTempExpected2);
-  calibrateSensor(oilTempSlope, oilTempOffset, oilTempRaw1, oilTempRaw2,
-                  oilTempExpected1, oilTempExpected2);
-  calibrateSensor(oilPressureSlope, oilPressureOffset, oilPressureRaw1,
-                  oilPressureRaw2, oilPressureExpected1, oilPressureExpected2);
+  calibrateSensor(ovenTempSlope, ovenTempOffset, vars[0], vars[1],
+                  vars[2], vars[3]);
+  calibrateSensor(oilTempSlope, oilTempOffset, vars[4], vars[5],
+                  vars[6], vars[7]);
+  calibrateSensor(oilPressureSlope, oilPressureOffset, vars[8],
+                  vars[9], vars[10], vars[11]);
 }
 
 void readSensorData(long int dataOut[], bool testEnabled) {
@@ -78,6 +73,15 @@ void readSensorData(long int dataOut[], bool testEnabled) {
     dataOut[1] += rawOilTemp;
     dataOut[2] += rawOilPressure;
   } else {
+    //Serial.println("----------OVEN---------");
+    //Serial.println(rawOvenTemp);
+    //Serial.println(ovenTempSlope);
+    //Serial.println(ovenTempOffset);
+    //Serial.println("----------OIL---------");
+    //Serial.println(rawOilTemp);
+    //Serial.println(oilTempSlope);
+    //Serial.println(oilTempOffset);
+    //Serial.println("---------------------");
     float adjustedOvenTemp = (rawOvenTemp * ovenTempSlope) + ovenTempOffset;
     float adjustedOilTemp = (rawOilTemp * oilTempSlope) + oilTempOffset;
     float adjustedOilPressure =
@@ -89,7 +93,7 @@ void readSensorData(long int dataOut[], bool testEnabled) {
   }
 }
 
-void writeFourDigitNumber(long int offset, int n) {
+void writeFourDigitNumber(long int offset, int n, bool testEnabled) {
   bool wasNegative = n < 0;
 
   n = abs(n);
@@ -109,9 +113,18 @@ void writeFourDigitNumber(long int offset, int n) {
   } else {
     lc.setChar(floor(offset / 8), truncatedOffset + 5, ' ', false);
   }
+
+  if (testEnabled) {
+    lc.setChar(floor(offset / 8), truncatedOffset + 7, 'C', false);
+  } else {
+    lc.setChar(floor(offset / 8), truncatedOffset + 7, ' ', false);
+  }
 }
 
-void sendData(long int dataOut[], long int readingsSinceLast) {
+void sendData(long int dataOut[], long int readingsSinceLast, bool testEnabled) {
+  if (testEnabled) {
+    return;
+  }
   Serial.print(dataOut[0] / readingsSinceLast);
   Serial.print(", ");
   Serial.print(dataOut[1] / readingsSinceLast);
@@ -119,11 +132,11 @@ void sendData(long int dataOut[], long int readingsSinceLast) {
   Serial.println(dataOut[2] / readingsSinceLast);
 }
 
-void updateDisplay(long int dataOut[], long int readingsSinceLast) {
+void updateDisplay(long int dataOut[], long int readingsSinceLast, bool testEnabled) {
   writeFourDigitNumber(
-      16, dataOut[0] / readingsSinceLast);  // Display oven temperature
+      16, dataOut[0] / readingsSinceLast, testEnabled);  // Display oven temperature
   writeFourDigitNumber(
-      8, dataOut[1] / readingsSinceLast);  // Display oil temperature
+      8, dataOut[1] / readingsSinceLast, testEnabled);  // Display oil temperature
   writeFourDigitNumber(0,
-                       dataOut[2] / readingsSinceLast);  // Display oil pressure
+                       dataOut[2] / readingsSinceLast, testEnabled);  // Display oil pressure
 }
