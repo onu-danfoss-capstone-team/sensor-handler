@@ -1,6 +1,6 @@
 #include "SensorModule.h"
 
-#define BUTTON_PIN 6
+#define BUTTON_PIN 5
 
 const int interval = 5000;
 long int lastUpdate = -1;
@@ -16,7 +16,7 @@ unsigned long debounceDelay = 200;   // Debounce delay time in milliseconds
 void setup() {
   Serial.begin(9600);        // Initialize serial communication
   initializeSensorModule();  // Initialize sensor module
-  pinMode(BUTTON_PIN, INPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 }
 
 void loop() {
@@ -30,14 +30,14 @@ void loop() {
   // Check if the calibration button is pressed and the debounce delay has
   // elapsed
 
-  if (currentButtonState == HIGH) {
-    Serial.println("HIGH");
+  if (currentButtonState == LOW) {
+   // Serial.println("LOW");
   }
-  if (currentButtonState == HIGH && currentButtonState != lastButtonState &&
+  if (currentButtonState == LOW && currentButtonState != lastButtonState &&
       (millis() - lastDebounceTime) > debounceDelay) {
-    Serial.println("Button pressed");
     calibrationMode = !calibrationMode;  // Toggle calibration mode
     lastDebounceTime = millis();         // Update the last debounce time
+    Serial.flush();
   }
 
   lastButtonState = currentButtonState;  // Update the last button state
@@ -50,15 +50,14 @@ void loop() {
     lastUpdate = currentTime;  // Update last serial update time
 
     updateDisplay(sensorData,
-                  readingsSinceLast);  // Update display (every 1 second)
+                  readingsSinceLast, calibrationMode);  // Update display (every 1 second)
     sendData(
         sensorData,
-        readingsSinceLast);  // Send sensor data over serial (every 15 minutes)
+        readingsSinceLast, calibrationMode);  // Send sensor data over serial (every 15 minutes)
 
     sensorData[0] = 0;
     sensorData[1] = 0;
     sensorData[2] = 0;
-    Serial.println(calibrationMode);
     readingsSinceLast = 0;
   }
 }
